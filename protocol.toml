@@ -1,0 +1,77 @@
+# Pre-registered research protocol (Step 1).
+# Fill this in and commit it BEFORE running the grid. Every trial logged in
+# results/trials.csv records a hash of this file, so later edits are visible.
+
+[hypothesis]
+name = "orb"   # strategy key in propbot/strategies.py: "orb" or "vwap_revert"
+statement = "Opening-range breakout: after the first N minutes, a break of the range high/low continues."
+
+[session]
+# All times are exchange time (CT for CME). Data timestamps must be in this zone.
+start = "08:30"
+end = "15:00"
+last_entry = "14:00"     # no new positions after this
+flatten = "14:30"        # hard flatten time
+max_trades_per_day = 1
+
+[risk]
+contracts = 1
+stop_usd = 150.0         # hard stop per contract, in dollars
+target_usd = 200.0       # hard target per contract, in dollars
+daily_loss_limit = 1000.0
+daily_profit_cap = 2000.0
+slippage_ticks = 1       # applied on entry AND exit
+
+[data]
+instruments = ["MES", "MNQ"]   # must have files data/<SYMBOL>.csv
+timeframes = [1, 5]            # minutes; 1-minute data is resampled up
+# Years are split automatically: dev = all but last two, validation = N-1, holdout = N.
+
+[grid]
+# Every parameter varied, locked in advance. Cartesian product is tested.
+orb_minutes = [5, 15, 30]
+stop_usd = [100.0, 150.0, 200.0]
+target_usd = [150.0, 200.0, 300.0]
+
+[gate]
+# Screening gate (Step 4), applied on the development set.
+min_t_dev = 1.5
+min_t_validation = 2.0
+max_top1pct_share = 0.5
+require_all_combos_positive = true
+
+# Prop-firm rules (Step 6). PLACEHOLDERS: replace with the firm's written rules (Step 8).
+[firm.evaluation]
+account_size = 50000.0
+profit_target = 3000.0
+daily_loss_limit = 1000.0
+daily_loss_is_breach = false     # true = hitting it fails the account; false = stop for the day
+max_drawdown = 2000.0
+drawdown_type = "eod_trailing"   # "eod_trailing" | "intraday_trailing" | "static"
+trail_lock_at_start = true       # trailing floor stops rising once it reaches the start balance
+daily_profit_cap = 2000.0        # 0 disables
+consistency_max_day_share = 0.5  # best day <= this share of total profit; 0 disables
+min_days = 2
+max_days = 60                    # give up after this many trading days
+
+[firm.funded]
+account_size = 50000.0
+daily_loss_limit = 500.0
+daily_loss_is_breach = false
+max_drawdown = 2000.0
+drawdown_type = "eod_trailing"
+trail_lock_at_start = true
+daily_profit_cap = 2000.0
+payout_min_days = 5              # trading days since start / last payout
+payout_window = 5                # consistency: green days required in the last N days
+payout_green_days = 4
+green_day_min = 50.0             # a "green day" must make at least this much
+payout_min_profit = 500.0        # profit above start balance needed to request
+payout_max = 2000.0              # largest single payout
+payouts_goal = 2
+horizon_days = 250
+
+[lifecycle]
+paths = 2000
+block_days = 5        # block bootstrap length, keeps short streaks intact
+seed = 7
